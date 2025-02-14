@@ -7,6 +7,7 @@
 // FIXME(#2455): Reorder trait items.
 
 use std::cmp::Ordering;
+use std::collections::HashSet;
 
 use rustc_ast::{ast, attr};
 use rustc_span::{Span, symbol::sym};
@@ -96,6 +97,7 @@ fn rewrite_reorderable_or_regroupable_items(
     reorderable_items: &[&ast::Item],
     shape: Shape,
     span: Span,
+    mods: &HashSet<String>,
 ) -> RewriteResult {
     match reorderable_items[0].kind {
         // FIXME: Remove duplicated code.
@@ -131,6 +133,7 @@ fn rewrite_reorderable_or_regroupable_items(
                     vec![normalized_items]
                 }
                 GroupImportsTactic::StdExternalCrate => group_imports(normalized_items),
+                GroupImportsTactic::Stockly => group_imports_stockly(normalized_items, mods),
             };
 
             if context.config.reorder_imports() {
@@ -219,6 +222,37 @@ fn group_imports(uts: Vec<UseTree>) -> Vec<Vec<UseTree>> {
     vec![std_imports, external_imports, local_imports]
 }
 
+/// Divides imports into three groups according to the stockly style.
+fn group_imports_stockly(uts: Vec<UseTree>, mods: &HashSet<String>) -> Vec<Vec<UseTree>> {
+    let mut local_use = Vec::new();
+    let mut super_use = Vec::new();
+    let mut crate_use = Vec::new();
+    let mut external_use = Vec::new();
+
+    for ut in uts.into_iter() {
+        if ut.path.is_empty() {
+            external_use.push(ut);
+            continue;
+        }
+
+        match &ut.path[0].kind {
+            UseSegmentKind::Slf(_) => local_use.push(ut),
+            UseSegmentKind::Ident(id, _) => {
+                if mods.contains(&id.to_owned()) {
+                    local_use.push(ut)
+                } else {
+                    external_use.push(ut)
+                }
+            }
+            UseSegmentKind::Super(_) => super_use.push(ut),
+            UseSegmentKind::Crate(_) => crate_use.push(ut),
+            UseSegmentKind::Glob | UseSegmentKind::List(_) => external_use.push(ut),
+        }
+    }
+
+    vec![local_use, super_use, crate_use, external_use]
+}
+
 /// A simplified version of `ast::ItemKind`.
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 enum ReorderableItemKind {
@@ -287,6 +321,13 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
         let mut last = self.psess.lookup_line_range(items[0].span());
         let item_length = items
             .iter()
+            .inspect(|ppi| {
+                if matches!(item_kind, ReorderableItemKind::Mod)
+                    && item_kind.is_same_item_kind(&***ppi)
+                {
+                    self.visited_mod_indents.insert(ppi.ident.to_string());
+                }
+            })
             .take_while(|ppi| {
                 item_kind.is_same_item_kind(&***ppi)
                     && (!in_group || {
@@ -312,6 +353,7 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
                 items,
                 self.shape(),
                 span,
+                &self.visited_mod_indents,
             );
             self.push_rewrite(span, rw.ok());
         } else {
