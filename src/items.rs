@@ -3590,6 +3590,7 @@ pub(crate) fn is_mod_decl(item: &ast::Item) -> bool {
     )
 }
 
+#[allow(unused)]
 pub(crate) fn is_use_item(item: &ast::Item) -> bool {
     matches!(item.kind, ast::ItemKind::Use(_))
 }

@@ -1,4 +1,5 @@
 use std::cell::{Cell, RefCell};
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use rustc_ast::{ast, token::Delimiter, visit};
@@ -12,7 +13,7 @@ use crate::config::{BraceStyle, Config, MacroSelector, StyleEdition};
 use crate::coverage::transform_missing_snippet;
 use crate::items::{
     FnBraceStyle, FnSig, ItemVisitorKind, StaticParts, StructParts, format_impl, format_trait,
-    format_trait_alias, is_mod_decl, is_use_item, rewrite_extern_crate, rewrite_type_alias,
+    format_trait_alias, is_mod_decl, rewrite_extern_crate, rewrite_type_alias,
 };
 use crate::macros::{MacroPosition, macro_style, rewrite_macro, rewrite_macro_def};
 use crate::modules::Module;
@@ -87,6 +88,7 @@ pub(crate) struct FmtVisitor<'a> {
     pub(crate) report: FormatReport,
     pub(crate) skip_context: SkipContext,
     pub(crate) is_macro_def: bool,
+    pub(crate) visited_mod_indents: HashSet<String>,
 }
 
 impl<'a> Drop for FmtVisitor<'a> {
@@ -791,6 +793,7 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
             skipped_range: Rc::new(RefCell::new(vec![])),
             is_macro_def: false,
             macro_rewrite_failure: false,
+            visited_mod_indents: HashSet::new(),
             report,
             skip_context,
         }
@@ -871,7 +874,7 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
         // Extract leading `use ...;`.
         let items: Vec<_> = stmts
             .iter()
-            .take_while(|stmt| stmt.to_item().map_or(false, is_use_item))
+            .take_while(|stmt| stmt.to_item().map_or(false, is_mod_decl))
             .filter_map(|stmt| stmt.to_item())
             .collect();
 
