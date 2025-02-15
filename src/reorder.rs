@@ -13,7 +13,7 @@ use rustc_ast::{ast, attr};
 use rustc_span::{Span, symbol::sym};
 
 use crate::StyleEdition;
-use crate::config::{Config, GroupImportsTactic};
+use crate::config::{Config, GroupImportsTactic, ImportGranularity};
 use crate::imports::{UseSegmentKind, UseTree, normalize_use_trees_with_granularity};
 use crate::items::{is_mod_decl, rewrite_extern_crate, rewrite_mod};
 use crate::lists::{ListFormatting, ListItem, itemize_list, write_list};
@@ -222,7 +222,7 @@ fn group_imports(uts: Vec<UseTree>) -> Vec<Vec<UseTree>> {
     vec![std_imports, external_imports, local_imports]
 }
 
-/// Divides imports into three groups according to the stockly style.
+/// Divides imports into four groups according to the stockly style.
 fn group_imports_stockly(uts: Vec<UseTree>, mods: &HashSet<String>) -> Vec<Vec<UseTree>> {
     let mut local_use = Vec::new();
     let mut super_use = Vec::new();
@@ -249,6 +249,8 @@ fn group_imports_stockly(uts: Vec<UseTree>, mods: &HashSet<String>) -> Vec<Vec<U
             UseSegmentKind::Glob | UseSegmentKind::List(_) => external_use.push(ut),
         }
     }
+
+    let external_use = normalize_use_trees_with_granularity(external_use, ImportGranularity::One);
 
     vec![local_use, super_use, crate_use, external_use]
 }
