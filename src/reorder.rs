@@ -250,6 +250,7 @@ fn group_imports_stockly(uts: Vec<UseTree>, mods: &HashSet<String>) -> Vec<Vec<U
         }
     }
 
+    let local_use = normalize_use_trees_with_granularity(local_use, ImportGranularity::One);
     let external_use = normalize_use_trees_with_granularity(external_use, ImportGranularity::One);
 
     vec![local_use, super_use, crate_use, external_use]
