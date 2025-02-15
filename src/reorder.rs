@@ -238,7 +238,7 @@ fn group_imports_stockly(uts: Vec<UseTree>, mods: &HashSet<String>) -> Vec<Vec<U
         match &ut.path[0].kind {
             UseSegmentKind::Slf(_) => local_use.push(ut),
             UseSegmentKind::Ident(id, _) => {
-                if mods.contains(&id.to_owned()) {
+                if mods.contains(id.as_str()) {
                     local_use.push(ut)
                 } else {
                     external_use.push(ut)
