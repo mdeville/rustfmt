@@ -97,7 +97,7 @@ fn rewrite_reorderable_or_regroupable_items(
     reorderable_items: &[&ast::Item],
     shape: Shape,
     span: Span,
-    mods: &HashSet<String>,
+    visited_mods_indents: &HashSet<String>,
 ) -> RewriteResult {
     match reorderable_items[0].kind {
         // FIXME: Remove duplicated code.
@@ -133,7 +133,7 @@ fn rewrite_reorderable_or_regroupable_items(
                     vec![normalized_items]
                 }
                 GroupImportsTactic::StdExternalCrate => group_imports(normalized_items),
-                GroupImportsTactic::Stockly => group_imports_stockly(normalized_items, mods),
+                GroupImportsTactic::Stockly => group_imports_stockly(normalized_items, visited_mods_indents),
             };
 
             if context.config.reorder_imports() {
@@ -223,7 +223,7 @@ fn group_imports(uts: Vec<UseTree>) -> Vec<Vec<UseTree>> {
 }
 
 /// Divides imports into four groups according to the stockly style.
-fn group_imports_stockly(uts: Vec<UseTree>, mods: &HashSet<String>) -> Vec<Vec<UseTree>> {
+fn group_imports_stockly(uts: Vec<UseTree>, visited_mods_indents: &HashSet<String>) -> Vec<Vec<UseTree>> {
     let mut local_use = Vec::new();
     let mut super_use = Vec::new();
     let mut crate_use = Vec::new();
@@ -238,7 +238,7 @@ fn group_imports_stockly(uts: Vec<UseTree>, mods: &HashSet<String>) -> Vec<Vec<U
         match &ut.path[0].kind {
             UseSegmentKind::Slf(_) => local_use.push(ut),
             UseSegmentKind::Ident(id, _) => {
-                if mods.contains(id.as_str()) {
+                if visited_mods_indents.contains(id.as_str()) {
                     local_use.push(ut)
                 } else {
                     external_use.push(ut)
