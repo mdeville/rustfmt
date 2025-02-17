@@ -13,7 +13,7 @@ use crate::config::{BraceStyle, Config, MacroSelector, StyleEdition};
 use crate::coverage::transform_missing_snippet;
 use crate::items::{
     FnBraceStyle, FnSig, ItemVisitorKind, StaticParts, StructParts, format_impl, format_trait,
-    format_trait_alias, is_mod_decl, rewrite_extern_crate, rewrite_type_alias,
+    format_trait_alias, is_mod_decl, rewrite_extern_crate, rewrite_type_alias, is_use_item
 };
 use crate::macros::{MacroPosition, macro_style, rewrite_macro, rewrite_macro_def};
 use crate::modules::Module;
@@ -874,7 +874,7 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
         // Extract leading `use ...;`.
         let items: Vec<_> = stmts
             .iter()
-            .take_while(|stmt| stmt.to_item().map_or(false, is_mod_decl))
+            .take_while(|stmt| stmt.to_item().map_or(false, is_use_item))
             .filter_map(|stmt| stmt.to_item())
             .collect();
 
