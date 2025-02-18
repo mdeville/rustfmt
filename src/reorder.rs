@@ -289,6 +289,7 @@ impl ReorderableItemKind {
         ReorderableItemKind::from(item) == self
     }
 
+    /// Whether items of this kind should be reordered.
     fn is_reorderable(self, config: &Config) -> bool {
         match self {
             ReorderableItemKind::ExternCrate => config.reorder_imports(),
@@ -298,18 +299,21 @@ impl ReorderableItemKind {
         }
     }
 
+    /// Whether items of this kind should be regrouped.
     fn is_regroupable(self, config: &Config) -> bool {
         match self {
             ReorderableItemKind::ExternCrate
-            | ReorderableItemKind::Mod
             | ReorderableItemKind::Other => false,
+            ReorderableItemKind::Mod => config.regroup_modules(),
             ReorderableItemKind::Use => config.group_imports() != GroupImportsTactic::Preserve,
         }
     }
 
+    /// Whether items of this kind should be considered as a group when separated by newlines.
     fn in_group(self, config: &Config) -> bool {
         match self {
-            ReorderableItemKind::ExternCrate | ReorderableItemKind::Mod => true,
+            ReorderableItemKind::ExternCrate => true,
+            ReorderableItemKind::Mod => !config.regroup_modules(),
             ReorderableItemKind::Use => config.group_imports() == GroupImportsTactic::Preserve,
             ReorderableItemKind::Other => false,
         }
