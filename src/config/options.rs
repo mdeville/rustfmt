@@ -652,6 +652,7 @@ config_option_with_style_edition_default!(
 
     // Ordering
     ReorderImports, bool, _ => true;
+    RegroupModules, bool, _ => false;
     ReorderModules, bool, _ => true;
     ReorderImplItems, bool, _ => false;
 

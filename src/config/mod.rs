@@ -102,6 +102,7 @@ create_config! {
     // Ordering
     reorder_imports: ReorderImports, true, "Reorder import and extern crate statements \
         alphabetically";
+    regroup_modules: RegroupModules, false, "Ignore newlines and regroup all consecutive modules together";
     reorder_modules: ReorderModules, true, "Reorder module statements alphabetically in group";
     reorder_impl_items: ReorderImplItems, false, "Reorder impl items";
 
