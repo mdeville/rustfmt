@@ -1013,6 +1013,7 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
             report: self.report.clone(),
             skip_context: self.skip_context.clone(),
             skipped_range: self.skipped_range.clone(),
+            visited_mod_indents: &self.visited_mod_indents
         }
     }
 }

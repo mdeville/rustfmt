@@ -97,7 +97,6 @@ fn rewrite_reorderable_or_regroupable_items(
     reorderable_items: &[&ast::Item],
     shape: Shape,
     span: Span,
-    visited_mods_indents: &HashSet<String>,
 ) -> RewriteResult {
     match reorderable_items[0].kind {
         // FIXME: Remove duplicated code.
@@ -134,7 +133,7 @@ fn rewrite_reorderable_or_regroupable_items(
                 }
                 GroupImportsTactic::StdExternalCrate => group_imports(normalized_items),
                 GroupImportsTactic::ByDistance => {
-                    group_imports_by_distance(normalized_items, visited_mods_indents)
+                    group_imports_by_distance(normalized_items, context.visited_mod_indents)
                 }
             };
 
@@ -358,7 +357,6 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
                 items,
                 self.shape(),
                 span,
-                &self.visited_mod_indents,
             );
             self.push_rewrite(span, rw.ok());
         } else {
