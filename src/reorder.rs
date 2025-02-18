@@ -229,10 +229,10 @@ fn group_imports_stockly(
     uts: Vec<UseTree>,
     visited_mods_indents: &HashSet<String>,
 ) -> Vec<Vec<UseTree>> {
-    let mut local_use = Vec::new();
-    let mut super_use = Vec::new();
-    let mut crate_use = Vec::new();
     let mut external_use = Vec::new();
+    let mut crate_use = Vec::new();
+    let mut super_use = Vec::new();
+    let mut local_use = Vec::new();
 
     for ut in uts.into_iter() {
         if ut.path.is_empty() {
@@ -255,10 +255,10 @@ fn group_imports_stockly(
         }
     }
 
-    let local_use = normalize_use_trees_with_granularity(local_use, ImportGranularity::One);
     let external_use = normalize_use_trees_with_granularity(external_use, ImportGranularity::One);
+    let local_use = normalize_use_trees_with_granularity(local_use, ImportGranularity::One);
 
-    vec![local_use, super_use, crate_use, external_use]
+    vec![external_use, crate_use, super_use, local_use]
 }
 
 /// A simplified version of `ast::ItemKind`.
@@ -302,8 +302,7 @@ impl ReorderableItemKind {
     /// Whether items of this kind should be regrouped.
     fn is_regroupable(self, config: &Config) -> bool {
         match self {
-            ReorderableItemKind::ExternCrate
-            | ReorderableItemKind::Other => false,
+            ReorderableItemKind::ExternCrate | ReorderableItemKind::Other => false,
             ReorderableItemKind::Mod => config.regroup_modules(),
             ReorderableItemKind::Use => config.group_imports() != GroupImportsTactic::Preserve,
         }
@@ -374,11 +373,12 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
     /// consecutive and reorderable.
     pub(crate) fn visit_items_with_reordering(&mut self, mut items: &[&ast::Item]) {
         if self.config.group_imports() == GroupImportsTactic::Stockly {
-            items.iter().for_each(|item| {
-                if matches!(ReorderableItemKind::from(item), ReorderableItemKind::Mod) {
-                    self.visited_mod_indents.insert(item.ident.to_string());
-                }
-            });
+            self.visited_mod_indents.extend(
+                items
+                    .iter()
+                    .filter(|ppi| ReorderableItemKind::Mod.is_same_item_kind(&***ppi))
+                    .map(|pi| (**pi).ident.to_string()),
+            );
         }
         while !items.is_empty() {
             // If the next item is a `use`, `extern crate` or `mod`, then extract it and any
