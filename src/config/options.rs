@@ -123,7 +123,7 @@ pub enum GroupImportsTactic {
     /// 2. `super` imports
     /// 3. `crate` imports
     /// 4. other imports
-    Stockly,
+    ByDistance,
 }
 
 #[config_type]
