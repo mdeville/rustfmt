@@ -133,8 +133,8 @@ fn rewrite_reorderable_or_regroupable_items(
                     vec![normalized_items]
                 }
                 GroupImportsTactic::StdExternalCrate => group_imports(normalized_items),
-                GroupImportsTactic::Stockly => {
-                    group_imports_stockly(normalized_items, visited_mods_indents)
+                GroupImportsTactic::ByDistance => {
+                    group_imports_by_distance(normalized_items, visited_mods_indents)
                 }
             };
 
@@ -224,15 +224,16 @@ fn group_imports(uts: Vec<UseTree>) -> Vec<Vec<UseTree>> {
     vec![std_imports, external_imports, local_imports]
 }
 
-/// Divides imports into four groups according to the stockly style.
-fn group_imports_stockly(
+/// Divides imports into four groups from closest to furthest to the current
+/// module. Normalizes and sorts each subgroup into a single `use ...` item.
+fn group_imports_by_distance(
     uts: Vec<UseTree>,
     visited_mods_indents: &HashSet<String>,
 ) -> Vec<Vec<UseTree>> {
-    let mut external_use = Vec::new();
-    let mut crate_use = Vec::new();
-    let mut super_use = Vec::new();
     let mut local_use = Vec::new();
+    let mut super_use = Vec::new();
+    let mut crate_use = Vec::new();
+    let mut external_use = Vec::new();
 
     for ut in uts.into_iter() {
         if ut.path.is_empty() {
@@ -255,10 +256,10 @@ fn group_imports_stockly(
         }
     }
 
-    let external_use = normalize_use_trees_with_granularity(external_use, ImportGranularity::One);
     let local_use = normalize_use_trees_with_granularity(local_use, ImportGranularity::One);
+    let external_use = normalize_use_trees_with_granularity(external_use, ImportGranularity::One);
 
-    vec![external_use, crate_use, super_use, local_use]
+    vec![local_use, super_use, crate_use, external_use]
 }
 
 /// A simplified version of `ast::ItemKind`.
@@ -372,7 +373,7 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
     /// Visits and format the given items. Items are reordered If they are
     /// consecutive and reorderable.
     pub(crate) fn visit_items_with_reordering(&mut self, mut items: &[&ast::Item]) {
-        if self.config.group_imports() == GroupImportsTactic::Stockly {
+        if self.config.group_imports() == GroupImportsTactic::ByDistance {
             self.visited_mod_indents.extend(
                 items
                     .iter()
