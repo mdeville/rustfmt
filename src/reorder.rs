@@ -370,10 +370,8 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
     /// consecutive and reorderable.
     pub(crate) fn visit_items_with_reordering(&mut self, mut items: &[&ast::Item]) {
         if self.config.group_imports() == GroupImportsTactic::Stockly {
-            items.iter()
-            .for_each(|item| {
-                if matches!(ReorderableItemKind::from(item), ReorderableItemKind::Mod)
-                {
+            items.iter().for_each(|item| {
+                if matches!(ReorderableItemKind::from(item), ReorderableItemKind::Mod) {
                     self.visited_mod_indents.insert(item.ident.to_string());
                 }
             });
