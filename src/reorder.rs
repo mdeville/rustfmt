@@ -372,6 +372,7 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
     /// consecutive and reorderable.
     pub(crate) fn visit_items_with_reordering(&mut self, mut items: &[&ast::Item]) {
         if self.config.group_imports() == GroupImportsTactic::ByDistance {
+            self.visited_mod_indents.clear();
             self.visited_mod_indents.extend(
                 items
                     .iter()
