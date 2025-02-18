@@ -1,6 +1,7 @@
 // A generic trait to abstract the rewriting of an element (of the AST).
 
 use std::cell::{Cell, RefCell};
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use rustc_ast::ptr;
@@ -123,6 +124,7 @@ pub(crate) struct RewriteContext<'a> {
     pub(crate) report: FormatReport,
     pub(crate) skip_context: SkipContext,
     pub(crate) skipped_range: Rc<RefCell<Vec<(usize, usize)>>>,
+    pub(crate) visited_mod_indents: &'a HashSet<String>
 }
 
 pub(crate) struct InsideMacroGuard {
