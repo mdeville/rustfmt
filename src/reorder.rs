@@ -375,7 +375,7 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
             self.visited_mod_indents.extend(
                 items
                     .iter()
-                    .filter(|ppi| ReorderableItemKind::Mod.is_same_item_kind(&***ppi))
+                    .filter(|ppi| matches!((***ppi).kind, ast::ItemKind::Mod(..)))
                     .map(|pi| (**pi).ident.to_string()),
             );
         }
