@@ -369,13 +369,15 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
     /// Visits and format the given items. Items are reordered If they are
     /// consecutive and reorderable.
     pub(crate) fn visit_items_with_reordering(&mut self, mut items: &[&ast::Item]) {
-        items.iter()
-        .for_each(|item| {
-            if matches!(ReorderableItemKind::from(item), ReorderableItemKind::Mod)
-            {
-                self.visited_mod_indents.insert(item.ident.to_string());
-            }
-        });
+        if self.config.group_imports() == GroupImportsTactic::Stockly {
+            items.iter()
+            .for_each(|item| {
+                if matches!(ReorderableItemKind::from(item), ReorderableItemKind::Mod)
+                {
+                    self.visited_mod_indents.insert(item.ident.to_string());
+                }
+            });
+        }
         while !items.is_empty() {
             // If the next item is a `use`, `extern crate` or `mod`, then extract it and any
             // subsequent items that have the same item kind to be reordered within
