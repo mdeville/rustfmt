@@ -2380,6 +2380,8 @@ Discard existing import groups, and create four groups for:
 4. external crates.
 
 ```rust
+mod foo;
+
 use self::foo::bar;
 
 use super::{schema::{Context, Payload}, update::convert_publish_payload};
@@ -2406,6 +2408,8 @@ Discard existing import groups, and create four groups for:
 4. `self`.
 
 ```rust
+mod foo;
+
 use {
     alloc::alloc::Layout,
     broker::database::PooledConnection,
