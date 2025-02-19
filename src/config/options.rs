@@ -124,6 +124,12 @@ pub enum GroupImportsTactic {
     /// 3. `crate` imports
     /// 4. other imports
     ByDistance,
+    /// Discard existing groups, and create new groups for
+    /// 1. other imports
+    /// 2. `crate` imports
+    /// 3. `super` imports
+    /// 4. submodules / `self` import
+    ByDistanceDescending,
 }
 
 #[config_type]

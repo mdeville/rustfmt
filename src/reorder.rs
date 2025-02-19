@@ -132,9 +132,16 @@ fn rewrite_reorderable_or_regroupable_items(
                     vec![normalized_items]
                 }
                 GroupImportsTactic::StdExternalCrate => group_imports(normalized_items),
-                GroupImportsTactic::ByDistance => {
-                    group_imports_by_distance(normalized_items, context.visited_mod_idents)
-                }
+                GroupImportsTactic::ByDistance => group_imports_by_distance(
+                    normalized_items,
+                    context.visited_mod_idents,
+                    GroupImportsByDistanceTactic::ByDistance,
+                ),
+                GroupImportsTactic::ByDistanceDescending => group_imports_by_distance(
+                    normalized_items,
+                    context.visited_mod_idents,
+                    GroupImportsByDistanceTactic::ByDistanceDescending,
+                ),
             };
 
             if context.config.reorder_imports() {
@@ -223,11 +230,19 @@ fn group_imports(uts: Vec<UseTree>) -> Vec<Vec<UseTree>> {
     vec![std_imports, external_imports, local_imports]
 }
 
-/// Divides imports into four groups from closest to furthest to the current
-/// module. Normalizes and sorts each subgroup into a single `use ...` item.
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+enum GroupImportsByDistanceTactic {
+    ByDistance,
+    ByDistanceDescending,
+}
+
+/// Divides imports into four groups based on the distance to the current
+/// module. Normalizes and sorts each subgroup into a single `use ...` item according to the
+/// `group_imports` tactic.
 fn group_imports_by_distance(
     uts: Vec<UseTree>,
     visited_mod_idents: &HashSet<String>,
+    group_imports_by_distance_tactic: GroupImportsByDistanceTactic,
 ) -> Vec<Vec<UseTree>> {
     let mut local_use = Vec::new();
     let mut super_use = Vec::new();
@@ -267,7 +282,14 @@ fn group_imports_by_distance(
     let local_use = normalize_use_trees_with_granularity(local_use, ImportGranularity::One);
     let external_use = normalize_use_trees_with_granularity(external_use, ImportGranularity::One);
 
-    vec![external_use, crate_use, super_use, local_use]
+    match group_imports_by_distance_tactic {
+        GroupImportsByDistanceTactic::ByDistance => {
+            vec![local_use, super_use, crate_use, external_use]
+        }
+        GroupImportsByDistanceTactic::ByDistanceDescending => {
+            vec![external_use, crate_use, super_use, local_use]
+        }
+    }
 }
 
 /// A simplified version of `ast::ItemKind`.
