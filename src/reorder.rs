@@ -14,7 +14,7 @@ use rustc_span::{Span, symbol::sym};
 
 use crate::StyleEdition;
 use crate::config::{Config, GroupImportsTactic, ImportGranularity};
-use crate::imports::{UseSegmentKind, UseTree, normalize_use_trees_with_granularity};
+use crate::imports::{UseSegment, UseSegmentKind, UseTree, normalize_use_trees_with_granularity};
 use crate::items::{is_mod_decl, rewrite_extern_crate, rewrite_mod};
 use crate::lists::{ListFormatting, ListItem, itemize_list, write_list};
 use crate::rewrite::{RewriteContext, RewriteError, RewriteResult};
@@ -234,7 +234,7 @@ fn group_imports_by_distance(
     let mut crate_use = Vec::new();
     let mut external_use = Vec::new();
 
-    for ut in uts.into_iter() {
+    for mut ut in uts {
         if ut.path.is_empty() {
             external_use.push(ut);
             continue;
@@ -244,6 +244,15 @@ fn group_imports_by_distance(
             UseSegmentKind::Slf(_) => local_use.push(ut),
             UseSegmentKind::Ident(id, _) => {
                 if visited_mod_idents.contains(id.as_str()) {
+                    // Ugly because not efficient: Avoid cloning the `UseTree` by inserting the
+                    // `self` segment in place, but change the rewrite algorithm of the `UseTree`.
+                    ut.path.insert(
+                        0,
+                        UseSegment {
+                            kind: UseSegmentKind::Slf(None),
+                            style_edition: ut.path[0].style_edition,
+                        },
+                    );
                     local_use.push(ut)
                 } else {
                     external_use.push(ut)
@@ -258,7 +267,7 @@ fn group_imports_by_distance(
     let local_use = normalize_use_trees_with_granularity(local_use, ImportGranularity::One);
     let external_use = normalize_use_trees_with_granularity(external_use, ImportGranularity::One);
 
-    vec![local_use, super_use, crate_use, external_use]
+    vec![external_use, crate_use, super_use, local_use]
 }
 
 /// A simplified version of `ast::ItemKind`.
