@@ -133,7 +133,7 @@ fn rewrite_reorderable_or_regroupable_items(
                 }
                 GroupImportsTactic::StdExternalCrate => group_imports(normalized_items),
                 GroupImportsTactic::ByDistance => {
-                    group_imports_by_distance(normalized_items, context.visited_mod_indents)
+                    group_imports_by_distance(normalized_items, context.visited_mod_idents)
                 }
             };
 
@@ -227,7 +227,7 @@ fn group_imports(uts: Vec<UseTree>) -> Vec<Vec<UseTree>> {
 /// module. Normalizes and sorts each subgroup into a single `use ...` item.
 fn group_imports_by_distance(
     uts: Vec<UseTree>,
-    visited_mods_indents: &HashSet<String>,
+    visited_mod_idents: &HashSet<String>,
 ) -> Vec<Vec<UseTree>> {
     let mut local_use = Vec::new();
     let mut super_use = Vec::new();
@@ -243,7 +243,7 @@ fn group_imports_by_distance(
         match &ut.path[0].kind {
             UseSegmentKind::Slf(_) => local_use.push(ut),
             UseSegmentKind::Ident(id, _) => {
-                if visited_mods_indents.contains(id.as_str()) {
+                if visited_mod_idents.contains(id.as_str()) {
                     local_use.push(ut)
                 } else {
                     external_use.push(ut)
@@ -372,8 +372,8 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
     /// consecutive and reorderable.
     pub(crate) fn visit_items_with_reordering(&mut self, mut items: &[&ast::Item]) {
         if self.config.group_imports() == GroupImportsTactic::ByDistance {
-            self.visited_mod_indents.clear();
-            self.visited_mod_indents.extend(
+            self.visited_mod_idents.clear();
+            self.visited_mod_idents.extend(
                 items
                     .iter()
                     .filter(|ppi| matches!((***ppi).kind, ast::ItemKind::Mod(..)))

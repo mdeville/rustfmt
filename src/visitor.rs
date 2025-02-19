@@ -88,7 +88,7 @@ pub(crate) struct FmtVisitor<'a> {
     pub(crate) report: FormatReport,
     pub(crate) skip_context: SkipContext,
     pub(crate) is_macro_def: bool,
-    pub(crate) visited_mod_indents: HashSet<String>,
+    pub(crate) visited_mod_idents: HashSet<String>,
 }
 
 impl<'a> Drop for FmtVisitor<'a> {
@@ -793,7 +793,7 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
             skipped_range: Rc::new(RefCell::new(vec![])),
             is_macro_def: false,
             macro_rewrite_failure: false,
-            visited_mod_indents: HashSet::new(),
+            visited_mod_idents: HashSet::new(),
             report,
             skip_context,
         }
@@ -1013,7 +1013,7 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
             report: self.report.clone(),
             skip_context: self.skip_context.clone(),
             skipped_range: self.skipped_range.clone(),
-            visited_mod_indents: &self.visited_mod_indents,
+            visited_mod_idents: &self.visited_mod_idents,
         }
     }
 }
