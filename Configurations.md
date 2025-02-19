@@ -2371,6 +2371,58 @@ use std::sync::Arc;
 use uuid::Uuid;
 ```
 
+#### `ByDistance`
+
+Discard existing import groups, and create four groups for:
+1. `self`,
+2. `super`,
+3. `crate`,
+4. external crates.
+
+```rust
+use self::foo::bar;
+
+use super::{schema::{Context, Payload}, update::convert_publish_payload};
+
+use crate::models::Event;
+
+use {
+    alloc::alloc::Layout,
+    broker::database::PooledConnection,
+    chrono::Utc,
+    core::f32,
+    juniper::{FieldError, FieldResult},
+    std::sync::Arc,
+    uuid::Uuid
+};
+```
+
+#### `ByDistanceDescending`
+
+Discard existing import groups, and create four groups for:
+1. external crates,
+2. `crate`,
+3. `super`,
+4. `self`.
+
+```rust
+use {
+    alloc::alloc::Layout,
+    broker::database::PooledConnection,
+    chrono::Utc,
+    core::f32,
+    juniper::{FieldError, FieldResult},
+    std::sync::Arc,
+    uuid::Uuid
+};
+
+use crate::models::Event;
+
+use super::{schema::{Context, Payload}, update::convert_publish_payload};
+
+use self::foo::bar;
+```
+
 ## `reorder_modules`
 
 Reorder `mod` declarations alphabetically in group.
