@@ -2379,12 +2379,18 @@ Discard existing import groups, and create four groups for:
 3. `crate`,
 4. external crates.
 
+This option variant is not compatible with `import_granularity` as the individual groups are normalized after regrouping.
+
 ```rust
-mod foo;
+mod dolor;
+mod ipsum;
 
-use self::foo::bar;
+use self::{dolor::foo, ipsum::bar};
 
-use super::{schema::{Context, Payload}, update::convert_publish_payload};
+use super::{
+    schema::{Context, Payload},
+    update::convert_publish_payload,
+};
 
 use crate::models::Event;
 
@@ -2395,7 +2401,7 @@ use {
     core::f32,
     juniper::{FieldError, FieldResult},
     std::sync::Arc,
-    uuid::Uuid
+    uuid::Uuid,
 };
 ```
 
@@ -2407,8 +2413,11 @@ Discard existing import groups, and create four groups for:
 3. `super`,
 4. `self`.
 
+This option variant is not compatible with `import_granularity` as the individual groups are normalized after regrouping.
+
 ```rust
-mod foo;
+mod dolor;
+mod ipsum;
 
 use {
     alloc::alloc::Layout,
@@ -2417,15 +2426,26 @@ use {
     core::f32,
     juniper::{FieldError, FieldResult},
     std::sync::Arc,
-    uuid::Uuid
+    uuid::Uuid,
 };
 
 use crate::models::Event;
 
-use super::{schema::{Context, Payload}, update::convert_publish_payload};
+use super::{
+    schema::{Context, Payload},
+    update::convert_publish_payload,
+};
 
-use self::foo::bar;
+use self::{dolor::foo, ipsum::bar};
 ```
+
+## `regroup_modules`
+
+Discard all newlines between consecutive module declarations and group them into a single consecutive group.
+
+- **Default value**: `false`
+- **Possible values**: `true`, `false`
+- **Stable**: No
 
 ## `reorder_modules`
 

@@ -132,16 +132,13 @@ fn rewrite_reorderable_or_regroupable_items(
                     vec![normalized_items]
                 }
                 GroupImportsTactic::StdExternalCrate => group_imports(normalized_items),
-                GroupImportsTactic::ByDistance => group_imports_by_distance(
-                    normalized_items,
-                    context.visited_mod_idents,
-                    GroupImportsByDistanceTactic::ByDistance,
-                ),
-                GroupImportsTactic::ByDistanceDescending => group_imports_by_distance(
-                    normalized_items,
-                    context.visited_mod_idents,
-                    GroupImportsByDistanceTactic::ByDistanceDescending,
-                ),
+                GroupImportsTactic::ByDistance | GroupImportsTactic::ByDistanceDescending => {
+                    group_imports_by_distance(
+                        normalized_items,
+                        context.visited_mod_idents,
+                        context.config.group_imports(),
+                    )
+                }
             };
 
             if context.config.reorder_imports() {
@@ -230,19 +227,13 @@ fn group_imports(uts: Vec<UseTree>) -> Vec<Vec<UseTree>> {
     vec![std_imports, external_imports, local_imports]
 }
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-enum GroupImportsByDistanceTactic {
-    ByDistance,
-    ByDistanceDescending,
-}
-
 /// Divides imports into four groups based on the distance to the current
 /// module. Normalizes and sorts each subgroup into a single `use ...` item according to the
 /// `group_imports` tactic.
 fn group_imports_by_distance(
     uts: Vec<UseTree>,
     visited_mod_idents: &HashSet<String>,
-    group_imports_by_distance_tactic: GroupImportsByDistanceTactic,
+    group_imports_tactic: GroupImportsTactic,
 ) -> Vec<Vec<UseTree>> {
     let mut local_use = Vec::new();
     let mut super_use = Vec::new();
@@ -280,15 +271,18 @@ fn group_imports_by_distance(
     }
 
     let local_use = normalize_use_trees_with_granularity(local_use, ImportGranularity::One);
+    let super_use = normalize_use_trees_with_granularity(super_use, ImportGranularity::One);
+    let crate_use = normalize_use_trees_with_granularity(crate_use, ImportGranularity::One);
     let external_use = normalize_use_trees_with_granularity(external_use, ImportGranularity::One);
 
-    match group_imports_by_distance_tactic {
-        GroupImportsByDistanceTactic::ByDistance => {
+    match group_imports_tactic {
+        GroupImportsTactic::ByDistance => {
             vec![local_use, super_use, crate_use, external_use]
         }
-        GroupImportsByDistanceTactic::ByDistanceDescending => {
+        GroupImportsTactic::ByDistanceDescending => {
             vec![external_use, crate_use, super_use, local_use]
         }
+        _ => unreachable!(),
     }
 }
 
@@ -402,7 +396,10 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
     /// Visits and format the given items. Items are reordered If they are
     /// consecutive and reorderable.
     pub(crate) fn visit_items_with_reordering(&mut self, mut items: &[&ast::Item]) {
-        if self.config.group_imports() == GroupImportsTactic::ByDistance {
+        if matches!(
+            self.config.group_imports(),
+            GroupImportsTactic::ByDistance | GroupImportsTactic::ByDistanceDescending
+        ) {
             self.visited_mod_idents.clear();
             self.visited_mod_idents.extend(
                 items
