@@ -249,7 +249,7 @@ pub(crate) fn format_expr(
                 Ok(format!("break{id_str}"))
             }
         }
-        ast::ExprKind::Yield(ref opt_expr) => {
+        ast::ExprKind::Yield(ast::YieldKind::Prefix(ref opt_expr)) => {
             if let Some(ref expr) = *opt_expr {
                 rewrite_unary_prefix(context, "yield ", &**expr, shape)
             } else {
@@ -271,9 +271,11 @@ pub(crate) fn format_expr(
         ast::ExprKind::Try(..)
         | ast::ExprKind::Field(..)
         | ast::ExprKind::MethodCall(..)
-        | ast::ExprKind::Await(_, _) => rewrite_chain(expr, context, shape),
+        | ast::ExprKind::Await(_, _)
+        | ast::ExprKind::Use(_, _)
+        | ast::ExprKind::Yield(ast::YieldKind::Postfix(_)) => rewrite_chain(expr, context, shape),
         ast::ExprKind::MacCall(ref mac) => {
-            rewrite_macro(mac, None, context, shape, MacroPosition::Expression).or_else(|_| {
+            rewrite_macro(mac, context, shape, MacroPosition::Expression).or_else(|_| {
                 wrap_str(
                     context.snippet(expr.span).to_owned(),
                     context.config.max_width(),
@@ -1994,7 +1996,11 @@ fn rewrite_let(
     // TODO(ytmimi) comments could appear between `let` and the `pat`
 
     // 4 = "let ".len()
-    let pat_shape = shape.offset_left(4, pat.span)?;
+    let mut pat_shape = shape.offset_left(4, pat.span)?;
+    if context.config.style_edition() >= StyleEdition::Edition2027 {
+        // 2 for the length of " ="
+        pat_shape = pat_shape.sub_width(2, pat.span)?;
+    }
     let pat_str = pat.rewrite_result(context, pat_shape)?;
     result.push_str(&pat_str);
 
