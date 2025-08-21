@@ -408,7 +408,11 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
                 items
                     .iter()
                     .filter(|ppi| matches!((***ppi).kind, ast::ItemKind::Mod(..)))
-                    .map(|pi| (**pi).ident.to_string()),
+                    .flat_map(|pi| {
+                        self.snippet_provider
+                            .span_to_snippet((**pi).span)
+                            .map(ToString::to_string)
+                    }),
             );
         }
         while !items.is_empty() {
