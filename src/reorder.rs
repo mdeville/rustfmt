@@ -409,7 +409,6 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
                     ast::ItemKind::Mod(_, ident, _) => Some(ident.name.to_string()),
                     _ => None,
                 }));
-            println!("Visited mod idents: {:#?}", self.visited_mod_idents);
         }
         while !items.is_empty() {
             // If the next item is a `use`, `extern crate` or `mod`, then extract it and any
