@@ -404,16 +404,12 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
             GroupImportsTactic::ByDistance | GroupImportsTactic::ByDistanceDescending
         ) {
             self.visited_mod_idents.clear();
-            self.visited_mod_idents.extend(
-                items
-                    .iter()
-                    .filter(|ppi| matches!((***ppi).kind, ast::ItemKind::Mod(..)))
-                    .flat_map(|pi| {
-                        self.snippet_provider
-                            .span_to_snippet((**pi).span)
-                            .map(ToString::to_string)
-                    }),
-            );
+            self.visited_mod_idents
+                .extend(items.iter().filter_map(|ppi| match (**ppi).kind {
+                    ast::ItemKind::Mod(_, ident, _) => Some(ident.name.to_string()),
+                    _ => None,
+                }));
+            println!("Visited mod idents: {:#?}", self.visited_mod_idents);
         }
         while !items.is_empty() {
             // If the next item is a `use`, `extern crate` or `mod`, then extract it and any
