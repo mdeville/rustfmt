@@ -133,6 +133,17 @@ pub enum GroupImportsTactic {
 }
 
 #[config_type]
+/// Controls how imports are reordered within the same group.
+pub enum ReorderImportsTactic {
+    /// Keep imports in their original order.
+    Preserve,
+    /// Sort imports alphabetically.
+    Alphabetically,
+    /// Sort imports by visibility (Public to Private)
+    Visibility,
+}
+
+#[config_type]
 /// How to merge imports.
 pub enum ImportGranularity {
     /// Do not merge imports.
@@ -657,7 +668,7 @@ config_option_with_style_edition_default!(
     MergeImports, bool, _ => false;
 
     // Ordering
-    ReorderImports, bool, _ => true;
+    ReorderImports, ReorderImportsTactic, _ => ReorderImportsTactic::Alphabetically;
     RegroupModules, bool, _ => false;
     ReorderModules, bool, _ => true;
     ReorderImplItems, bool, _ => false;

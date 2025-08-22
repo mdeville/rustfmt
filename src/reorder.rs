@@ -13,7 +13,7 @@ use rustc_ast::{ast, attr};
 use rustc_span::{Span, symbol::sym};
 
 use crate::StyleEdition;
-use crate::config::{Config, GroupImportsTactic, ImportGranularity};
+use crate::config::{Config, GroupImportsTactic, ImportGranularity, ReorderImportsTactic};
 use crate::imports::{UseSegment, UseSegmentKind, UseTree, normalize_use_trees_with_granularity};
 use crate::items::{is_mod_decl, rewrite_extern_crate, rewrite_mod};
 use crate::lists::{ListFormatting, ListItem, itemize_list, write_list};
@@ -144,8 +144,18 @@ fn rewrite_reorderable_or_regroupable_items(
                 }
             };
 
-            if context.config.reorder_imports() {
-                regrouped_items.iter_mut().for_each(|items| items.sort())
+            match context.config.reorder_imports() {
+                ReorderImportsTactic::Preserve => {}
+                ReorderImportsTactic::Alphabetically => {
+                    regrouped_items.iter_mut().for_each(|items| items.sort())
+                }
+                ReorderImportsTactic::Visibility => regrouped_items.iter_mut().for_each(|items| {
+                    items.sort_by(|a, b| {
+                        a.visibility_sort_key()
+                            .cmp(&b.visibility_sort_key())
+                            .then_with(|| a.cmp(b))
+                    })
+                }),
             }
 
             // 4 = "use ", 1 = ";"
@@ -320,9 +330,13 @@ impl ReorderableItemKind {
     /// Whether items of this kind should be reordered.
     fn is_reorderable(self, config: &Config) -> bool {
         match self {
-            ReorderableItemKind::ExternCrate => config.reorder_imports(),
+            ReorderableItemKind::ExternCrate => {
+                !matches!(config.reorder_imports(), ReorderImportsTactic::Preserve)
+            }
             ReorderableItemKind::Mod => config.reorder_modules(),
-            ReorderableItemKind::Use => config.reorder_imports(),
+            ReorderableItemKind::Use => {
+                !matches!(config.reorder_imports(), ReorderImportsTactic::Preserve)
+            }
             ReorderableItemKind::Other => false,
         }
     }

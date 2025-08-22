@@ -7,6 +7,7 @@ use core::hash::{Hash, Hasher};
 use itertools::Itertools;
 
 use rustc_ast::ast::{self, UseTreeKind};
+use rustc_ast_pretty::pprust;
 use rustc_span::{
     BytePos, DUMMY_SP, Span,
     symbol::{self, sym},
@@ -759,6 +760,32 @@ impl UseTree {
             });
         }
         self
+    }
+
+    /// Returns a rank used for ordering use trees by visibility.
+    /// Lower values come first.
+    /// Order: pub (0), pub(crate) (1), pub(super) (2), others incl. inherited/none (3).
+    pub(crate) fn visibility_sort_key(&self) -> u8 {
+        use rustc_ast::ast::VisibilityKind;
+
+        match &self.visibility {
+            Some(vis) => match &vis.kind {
+                VisibilityKind::Public => 0,
+                VisibilityKind::Restricted { path, .. } => {
+                    // Map `pub(crate)` and `pub(super)` explicitly; others fall back.
+                    let p = pprust::path_to_string(path);
+                    if p == "crate" {
+                        1
+                    } else if p == "super" {
+                        2
+                    } else {
+                        3
+                    }
+                }
+                VisibilityKind::Inherited => 3,
+            },
+            None => 3,
+        }
     }
 }
 

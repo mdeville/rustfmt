@@ -1,5 +1,5 @@
 // rustfmt-imports_granularity: Item
-// rustfmt-reorder_imports: false
+// rustfmt-reorder_imports: Preserve
 // rustfmt-group_imports: StdExternalCrate
 
 use crate::lexer;
