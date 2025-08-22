@@ -7,13 +7,16 @@
 // FIXME(#2455): Reorder trait items.
 
 use std::cmp::Ordering;
+use std::collections::HashSet;
 
 use rustc_ast::{ast, attr};
 use rustc_span::{Span, symbol::sym};
 
 use crate::StyleEdition;
-use crate::config::{Config, GroupImportsTactic};
-use crate::imports::{UseSegmentKind, UseTree, normalize_use_trees_with_granularity};
+use crate::config::{
+    Config, GroupImportsTactic, ImportGranularity, ReorderImportsTactic, ReorderModulesTactic,
+};
+use crate::imports::{UseSegment, UseSegmentKind, UseTree, normalize_use_trees_with_granularity};
 use crate::items::{is_mod_decl, rewrite_extern_crate, rewrite_mod};
 use crate::lists::{ListFormatting, ListItem, itemize_list, write_list};
 use crate::rewrite::{RewriteContext, RewriteError, RewriteResult};
@@ -21,7 +24,7 @@ use crate::shape::Shape;
 use crate::sort::version_sort;
 use crate::source_map::LineRangeUtils;
 use crate::spanned::Spanned;
-use crate::utils::{contains_skip, mk_sp};
+use crate::utils::{contains_skip, mk_sp, visibility_sort_key};
 use crate::visitor::FmtVisitor;
 
 /// Choose the ordering between the given two items.
@@ -32,7 +35,19 @@ fn compare_items(a: &ast::Item, b: &ast::Item, context: &RewriteContext<'_>) -> 
             if style_edition <= StyleEdition::Edition2021 {
                 a_ident.as_str().cmp(b_ident.as_str())
             } else {
-                version_sort(a_ident.as_str(), b_ident.as_str())
+                match context.config.reorder_modules() {
+                    ReorderModulesTactic::Preserve => Ordering::Equal,
+                    ReorderModulesTactic::Alphabetically => {
+                        version_sort(a_ident.as_str(), b_ident.as_str())
+                    }
+                    ReorderModulesTactic::Visibility => {
+                        let a_vis = &a.vis;
+                        let b_vis = &b.vis;
+                        visibility_sort_key(a_vis)
+                            .cmp(&visibility_sort_key(b_vis))
+                            .then_with(|| version_sort(a_ident.as_str(), b_ident.as_str()))
+                    }
+                }
             }
         }
         (
@@ -134,10 +149,27 @@ fn rewrite_reorderable_or_regroupable_items(
                     vec![normalized_items]
                 }
                 GroupImportsTactic::StdExternalCrate => group_imports(normalized_items),
+                GroupImportsTactic::ByDistance | GroupImportsTactic::ByDistanceDescending => {
+                    group_imports_by_distance(
+                        normalized_items,
+                        context.visited_mod_idents,
+                        context.config.group_imports(),
+                    )
+                }
             };
 
-            if context.config.reorder_imports() {
-                regrouped_items.iter_mut().for_each(|items| items.sort())
+            match context.config.reorder_imports() {
+                ReorderImportsTactic::Preserve => {}
+                ReorderImportsTactic::Alphabetically => {
+                    regrouped_items.iter_mut().for_each(|items| items.sort())
+                }
+                ReorderImportsTactic::Visibility => regrouped_items.iter_mut().for_each(|items| {
+                    items.sort_by(|a, b| {
+                        a.visibility_sort_key()
+                            .cmp(&b.visibility_sort_key())
+                            .then_with(|| a.cmp(b))
+                    })
+                }),
             }
 
             // 4 = "use ", 1 = ";"
@@ -222,6 +254,65 @@ fn group_imports(uts: Vec<UseTree>) -> Vec<Vec<UseTree>> {
     vec![std_imports, external_imports, local_imports]
 }
 
+/// Divides imports into four groups based on the distance to the current
+/// module. Normalizes and sorts each subgroup into a single `use ...` item according to the
+/// `group_imports` tactic.
+fn group_imports_by_distance(
+    uts: Vec<UseTree>,
+    visited_mod_idents: &HashSet<String>,
+    group_imports_tactic: GroupImportsTactic,
+) -> Vec<Vec<UseTree>> {
+    let mut local_use = Vec::new();
+    let mut super_use = Vec::new();
+    let mut crate_use = Vec::new();
+    let mut external_use = Vec::new();
+
+    for mut ut in uts {
+        if ut.path.is_empty() {
+            external_use.push(ut);
+            continue;
+        }
+
+        match &ut.path[0].kind {
+            UseSegmentKind::Slf(_) => local_use.push(ut),
+            UseSegmentKind::Ident(id, _) => {
+                if visited_mod_idents.contains(id.as_str()) {
+                    // Ugly because not efficient: Avoid cloning the `UseTree` by inserting the
+                    // `self` segment in place, but change the rewrite algorithm of the `UseTree`.
+                    ut.path.insert(
+                        0,
+                        UseSegment {
+                            kind: UseSegmentKind::Slf(None),
+                            style_edition: ut.path[0].style_edition,
+                        },
+                    );
+                    local_use.push(ut)
+                } else {
+                    external_use.push(ut)
+                }
+            }
+            UseSegmentKind::Super(_) => super_use.push(ut),
+            UseSegmentKind::Crate(_) => crate_use.push(ut),
+            UseSegmentKind::Glob | UseSegmentKind::List(_) => external_use.push(ut),
+        }
+    }
+
+    let local_use = normalize_use_trees_with_granularity(local_use, ImportGranularity::One);
+    let super_use = normalize_use_trees_with_granularity(super_use, ImportGranularity::One);
+    let crate_use = normalize_use_trees_with_granularity(crate_use, ImportGranularity::One);
+    let external_use = normalize_use_trees_with_granularity(external_use, ImportGranularity::One);
+
+    match group_imports_tactic {
+        GroupImportsTactic::ByDistance => {
+            vec![local_use, super_use, crate_use, external_use]
+        }
+        GroupImportsTactic::ByDistanceDescending => {
+            vec![external_use, crate_use, super_use, local_use]
+        }
+        _ => unreachable!(),
+    }
+}
+
 /// A simplified version of `ast::ItemKind`.
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 enum ReorderableItemKind {
@@ -250,27 +341,36 @@ impl ReorderableItemKind {
         ReorderableItemKind::from(item) == self
     }
 
+    /// Whether items of this kind should be reordered.
     fn is_reorderable(self, config: &Config) -> bool {
         match self {
-            ReorderableItemKind::ExternCrate => config.reorder_imports(),
-            ReorderableItemKind::Mod => config.reorder_modules(),
-            ReorderableItemKind::Use => config.reorder_imports(),
+            ReorderableItemKind::ExternCrate => {
+                !matches!(config.reorder_imports(), ReorderImportsTactic::Preserve)
+            }
+            ReorderableItemKind::Mod => {
+                !matches!(config.reorder_modules(), ReorderModulesTactic::Preserve)
+            }
+            ReorderableItemKind::Use => {
+                !matches!(config.reorder_imports(), ReorderImportsTactic::Preserve)
+            }
             ReorderableItemKind::Other => false,
         }
     }
 
+    /// Whether items of this kind should be regrouped.
     fn is_regroupable(self, config: &Config) -> bool {
         match self {
-            ReorderableItemKind::ExternCrate
-            | ReorderableItemKind::Mod
-            | ReorderableItemKind::Other => false,
+            ReorderableItemKind::ExternCrate | ReorderableItemKind::Other => false,
+            ReorderableItemKind::Mod => config.regroup_modules(),
             ReorderableItemKind::Use => config.group_imports() != GroupImportsTactic::Preserve,
         }
     }
 
+    /// Whether items of this kind should be considered as a group when separated by newlines.
     fn in_group(self, config: &Config) -> bool {
         match self {
-            ReorderableItemKind::ExternCrate | ReorderableItemKind::Mod => true,
+            ReorderableItemKind::ExternCrate => true,
+            ReorderableItemKind::Mod => !config.regroup_modules(),
             ReorderableItemKind::Use => config.group_imports() == GroupImportsTactic::Preserve,
             ReorderableItemKind::Other => false,
         }
@@ -329,6 +429,17 @@ impl<'b, 'a: 'b> FmtVisitor<'a> {
     /// Visits and format the given items. Items are reordered If they are
     /// consecutive and reorderable.
     pub(crate) fn visit_items_with_reordering(&mut self, mut items: &[&ast::Item]) {
+        if matches!(
+            self.config.group_imports(),
+            GroupImportsTactic::ByDistance | GroupImportsTactic::ByDistanceDescending
+        ) {
+            self.visited_mod_idents.clear();
+            self.visited_mod_idents
+                .extend(items.iter().filter_map(|ppi| match (**ppi).kind {
+                    ast::ItemKind::Mod(_, ident, _) => Some(ident.name.to_string()),
+                    _ => None,
+                }));
+        }
         while !items.is_empty() {
             // If the next item is a `use`, `extern crate` or `mod`, then extract it and any
             // subsequent items that have the same item kind to be reordered within

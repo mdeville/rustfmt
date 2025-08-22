@@ -24,7 +24,7 @@ use crate::shape::Shape;
 use crate::sort::version_sort;
 use crate::source_map::SpanUtils;
 use crate::spanned::Spanned;
-use crate::utils::{is_same_visibility, mk_sp, rewrite_ident};
+use crate::utils::{is_same_visibility, mk_sp, rewrite_ident, visibility_sort_key};
 use crate::visitor::FmtVisitor;
 
 /// Returns a name imported by a `use` declaration.
@@ -759,6 +759,16 @@ impl UseTree {
             });
         }
         self
+    }
+
+    /// Returns a rank used for ordering use trees by visibility.
+    /// Lower values come first.
+    /// Order: pub (0), pub(crate) (1), pub(super) (2), others incl. inherited/none (3).
+    pub(crate) fn visibility_sort_key(&self) -> u8 {
+        match &self.visibility {
+            Some(vis) => visibility_sort_key(vis),
+            None => 3,
+        }
     }
 }
 

@@ -118,6 +118,39 @@ pub enum GroupImportsTactic {
     StdExternalCrate,
     /// Discard existing groups, and create a single group for everything
     One,
+    /// Discard existing groups, and create new groups for
+    /// 1. submodules / `self` import
+    /// 2. `super` imports
+    /// 3. `crate` imports
+    /// 4. other imports
+    ByDistance,
+    /// Discard existing groups, and create new groups for
+    /// 1. other imports
+    /// 2. `crate` imports
+    /// 3. `super` imports
+    /// 4. submodules / `self` import
+    ByDistanceDescending,
+}
+
+#[config_type]
+/// Controls how imports are reordered within the same group.
+pub enum ReorderImportsTactic {
+    /// Keep imports in their original order.
+    Preserve,
+    /// Sort imports alphabetically.
+    Alphabetically,
+    /// Sort imports by visibility (Public to Private)
+    Visibility,
+}
+
+#[config_type]
+pub enum ReorderModulesTactic {
+    /// Keep modules in their original order.
+    Preserve,
+    /// Sort modules alphabetically.
+    Alphabetically,
+    /// Sort modules by visibility (Public to Private)
+    Visibility,
 }
 
 #[config_type]
@@ -645,8 +678,9 @@ config_option_with_style_edition_default!(
     MergeImports, bool, _ => false;
 
     // Ordering
-    ReorderImports, bool, _ => true;
-    ReorderModules, bool, _ => true;
+    ReorderImports, ReorderImportsTactic, _ => ReorderImportsTactic::Alphabetically;
+    RegroupModules, bool, _ => false;
+    ReorderModules, ReorderModulesTactic, _ => ReorderModulesTactic::Alphabetically;
     ReorderImplItems, bool, _ => false;
 
     // Spaces around punctuation

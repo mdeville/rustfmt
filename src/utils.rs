@@ -49,6 +49,27 @@ pub(crate) fn is_same_visibility(a: &Visibility, b: &Visibility) -> bool {
     }
 }
 
+/// Returns a rank used for ordering use trees by visibility.
+/// Lower values come first.
+/// Order: pub (0), pub(crate) (1), pub(super) (2), others incl. inherited/none (3).
+pub(crate) fn visibility_sort_key(vis: &Visibility) -> u8 {
+    match &vis.kind {
+        VisibilityKind::Public => 0,
+        VisibilityKind::Restricted { path, .. } => {
+            // Map `pub(crate)` and `pub(super)` explicitly; others fall back.
+            let p = pprust::path_to_string(path);
+            if p == "crate" {
+                1
+            } else if p == "super" {
+                2
+            } else {
+                3
+            }
+        }
+        VisibilityKind::Inherited => 3,
+    }
+}
+
 // Uses Cow to avoid allocating in the common cases.
 pub(crate) fn format_visibility(
     context: &RewriteContext<'_>,

@@ -6,5 +6,5 @@ brace_style = "SameLineWhere"
 fn_params_layout = "Tall"
 trailing_comma = "Vertical"
 indent_style = "Block"
-reorder_imports = false
+reorder_imports = "Preserve"
 format_strings = true

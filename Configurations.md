@@ -6,7 +6,7 @@ A possible content of `rustfmt.toml` or `.rustfmt.toml` might look like this:
 
 ```toml
 indent_style = "Block"
-reorder_imports = false
+reorder_imports = "Preserve"
 ```
 
 Each configuration option is either stable or unstable.
@@ -429,7 +429,7 @@ Maximum length of comments. No effect unless `wrap_comments = true`.
 
 - **Default value**: `80`
 - **Possible values**: any positive integer
-- **Stable**: No (tracking issue: [#3349](https://github.com/rust-lang/rustfmt/issues/3349))
+- **Stable**: Yes (overridden by Stockly)
 
 **Note:** A value of `0` results in [`wrap_comments`](#wrap_comments) being applied regardless of a line's width.
 
@@ -452,7 +452,7 @@ Replace strings of _ wildcards by a single .. in tuple patterns
 
 - **Default value**: `false`
 - **Possible values**: `true`, `false`
-- **Stable**: No (tracking issue: [#3384](https://github.com/rust-lang/rustfmt/issues/3384))
+- **Stable**: Yes (overridden by Stockly)
 
 #### `false` (default):
 
@@ -998,7 +998,7 @@ Format code snippet included in doc comments.
 
 - **Default value**: `false`
 - **Possible values**: `true`, `false`
-- **Stable**: No (tracking issue: [#3348](https://github.com/rust-lang/rustfmt/issues/3348))
+- **Stable**: Yes (overridden by Stockly)
 
 #### `false` (default):
 
@@ -1115,7 +1115,7 @@ Format the bodies of declarative macro definitions.
 
 - **Default value**: `true`
 - **Possible values**: `true`, `false`
-- **Stable**: No (tracking issue: [#3355](https://github.com/rust-lang/rustfmt/issues/3355))
+- **Stable**: Yes (overridden by Stockly)
 
 #### `true` (default):
 
@@ -1257,7 +1257,7 @@ Control the case of the letters in hexadecimal literal values
 
 - **Default value**: `Preserve`
 - **Possible values**: `Preserve`, `Upper`, `Lower`
-- **Stable**: No (tracking issue: [#5081](https://github.com/rust-lang/rustfmt/issues/5081))
+- **Stable**: Yes (overridden by Stockly)
 
 ## `float_literal_trailing_zero`
 
@@ -2135,7 +2135,7 @@ Convert `#![doc]` and `#[doc]` attributes to `//!` and `///` doc comments.
 
 - **Default value**: `false`
 - **Possible values**: `true`, `false`
-- **Stable**: No (tracking issue: [#3351](https://github.com/rust-lang/rustfmt/issues/3351))
+- **Stable**: Yes (overridden by Stockly)
 
 #### `false` (default):
 
@@ -2313,14 +2313,13 @@ impl Iterator for Dummy {
 
 ## `reorder_imports`
 
-Reorder import and extern crate statements alphabetically in groups (a group is
-separated by a newline).
+Reorder import and extern crate statements in groups (a group is separated by a newline).
 
-- **Default value**: `true`
-- **Possible values**: `true`, `false`
-- **Stable**: Yes
+- **Default value**: `Alphabetically`
+- **Possible values**: `Preserve`, `Alphabetically`, `Visibility`
+- **Stable**: Yes (variants changed by Stockly)
 
-#### `true` (default):
+#### `Alphabetically` (default):
 
 ```rust
 use dolor;
@@ -2329,12 +2328,21 @@ use lorem;
 use sit;
 ```
 
-#### `false`:
+#### `Preserve`:
 
 ```rust
 use lorem;
 use ipsum;
 use dolor;
+use sit;
+```
+
+#### `Visibility`:
+
+```rust
+pub use lorem;
+pub(crate) use ipsum;
+pub(super) use dolor;
 use sit;
 ```
 
@@ -2345,8 +2353,8 @@ Controls the strategy for how consecutive imports are grouped together.
 Controls the strategy for grouping sets of consecutive imports. Imports may contain newlines between imports and still be grouped together as a single set, but other statements between imports will result in different grouping sets.
 
 - **Default value**: `Preserve`
-- **Possible values**: `Preserve`, `StdExternalCrate`, `One`
-- **Stable**: No (tracking issue: [#5083](https://github.com/rust-lang/rustfmt/issues/5083))
+- **Possible values**: `Preserve`, `StdExternalCrate`, `One`, `ByDistance`, `ByDistanceDescending`
+- **Stable**: Yes (variants changed by Stockly)
 
 Each set of imports (one or more `use` statements, optionally separated by newlines) will be formatted independently. Other statements such as `mod ...` or `extern crate ...` will cause imports to not be grouped together.
 
@@ -2410,15 +2418,91 @@ use std::sync::Arc;
 use uuid::Uuid;
 ```
 
+#### `ByDistance`
+
+Discard existing import groups, and create four groups for:
+1. `self`,
+2. `super`,
+3. `crate`,
+4. external crates.
+
+This option variant is not compatible with `import_granularity` as the individual groups are normalized after regrouping.
+
+```rust
+mod dolor;
+mod ipsum;
+
+use self::{dolor::foo, ipsum::bar};
+
+use super::{
+    schema::{Context, Payload},
+    update::convert_publish_payload,
+};
+
+use crate::models::Event;
+
+use {
+    alloc::alloc::Layout,
+    broker::database::PooledConnection,
+    chrono::Utc,
+    core::f32,
+    juniper::{FieldError, FieldResult},
+    std::sync::Arc,
+    uuid::Uuid,
+};
+```
+
+#### `ByDistanceDescending`
+
+Discard existing import groups, and create four groups for:
+1. external crates,
+2. `crate`,
+3. `super`,
+4. `self`.
+
+This option variant is not compatible with `import_granularity` as the individual groups are normalized after regrouping.
+
+```rust
+mod dolor;
+mod ipsum;
+
+use {
+    alloc::alloc::Layout,
+    broker::database::PooledConnection,
+    chrono::Utc,
+    core::f32,
+    juniper::{FieldError, FieldResult},
+    std::sync::Arc,
+    uuid::Uuid,
+};
+
+use crate::models::Event;
+
+use super::{
+    schema::{Context, Payload},
+    update::convert_publish_payload,
+};
+
+use self::{dolor::foo, ipsum::bar};
+```
+
+## `regroup_modules`
+
+Discard all newlines between consecutive module declarations and group them into a single consecutive group.
+
+- **Default value**: `false`
+- **Possible values**: `true`, `false`
+- **Stable**: Yes (created by Stockly)
+
 ## `reorder_modules`
 
-Reorder `mod` declarations alphabetically in group.
+Reorder `mod` declarations in group.
 
-- **Default value**: `true`
-- **Possible values**: `true`, `false`
-- **Stable**: Yes
+- **Default value**: `Alphabetically`
+- **Possible values**: `Preserve`, `Alphabetically`, `Visibility`
+- **Stable**: Yes (variants changed by Stockly)
 
-#### `true` (default)
+#### `Alphabetically` (default)
 
 ```rust
 mod a;
@@ -2430,7 +2514,7 @@ mod lorem;
 mod sit;
 ```
 
-#### `false`
+#### `Preserve`
 
 ```rust
 mod b;
@@ -2439,6 +2523,18 @@ mod a;
 mod lorem;
 mod ipsum;
 mod dolor;
+mod sit;
+```
+
+#### `Visibility`
+
+```rust
+pub mod a;
+pub(crate) mod b;
+mod c;
+
+mod dolor;
+mod lorem;
 mod sit;
 ```
 
@@ -3275,7 +3371,7 @@ Note that no wrapping will happen if:
 
 - **Default value**: `false`
 - **Possible values**: `true`, `false`
-- **Stable**: No (tracking issue: [#3347](https://github.com/rust-lang/rustfmt/issues/3347))
+- **Stable**: Yes (overridden by Stockly)
 
 #### `false` (default):
 
