@@ -429,7 +429,7 @@ Maximum length of comments. No effect unless `wrap_comments = true`.
 
 - **Default value**: `80`
 - **Possible values**: any positive integer
-- **Stable**: No (tracking issue: [#3349](https://github.com/rust-lang/rustfmt/issues/3349))
+- **Stable**: Yes (overridden by Stockly)
 
 **Note:** A value of `0` results in [`wrap_comments`](#wrap_comments) being applied regardless of a line's width.
 
@@ -452,7 +452,7 @@ Replace strings of _ wildcards by a single .. in tuple patterns
 
 - **Default value**: `false`
 - **Possible values**: `true`, `false`
-- **Stable**: No (tracking issue: [#3384](https://github.com/rust-lang/rustfmt/issues/3384))
+- **Stable**: Yes (overridden by Stockly)
 
 #### `false` (default):
 
@@ -998,7 +998,7 @@ Format code snippet included in doc comments.
 
 - **Default value**: `false`
 - **Possible values**: `true`, `false`
-- **Stable**: No (tracking issue: [#3348](https://github.com/rust-lang/rustfmt/issues/3348))
+- **Stable**: Yes (overridden by Stockly)
 
 #### `false` (default):
 
@@ -1115,7 +1115,7 @@ Format the bodies of declarative macro definitions.
 
 - **Default value**: `true`
 - **Possible values**: `true`, `false`
-- **Stable**: No (tracking issue: [#3355](https://github.com/rust-lang/rustfmt/issues/3355))
+- **Stable**: Yes (overridden by Stockly)
 
 #### `true` (default):
 
@@ -1257,7 +1257,7 @@ Control the case of the letters in hexadecimal literal values
 
 - **Default value**: `Preserve`
 - **Possible values**: `Preserve`, `Upper`, `Lower`
-- **Stable**: No (tracking issue: [#5081](https://github.com/rust-lang/rustfmt/issues/5081))
+- **Stable**: Yes (overridden by Stockly)
 
 ## `float_literal_trailing_zero`
 
@@ -2135,7 +2135,7 @@ Convert `#![doc]` and `#[doc]` attributes to `//!` and `///` doc comments.
 
 - **Default value**: `false`
 - **Possible values**: `true`, `false`
-- **Stable**: No (tracking issue: [#3351](https://github.com/rust-lang/rustfmt/issues/3351))
+- **Stable**: Yes (overridden by Stockly)
 
 #### `false` (default):
 
@@ -2317,7 +2317,7 @@ Reorder import and extern crate statements in groups (a group is separated by a 
 
 - **Default value**: `Alphabetically`
 - **Possible values**: `Preserve`, `Alphabetically`, `Visibility`
-- **Stable**: Yes
+- **Stable**: Yes (variants changed by Stockly)
 
 #### `Alphabetically` (default):
 
@@ -2354,7 +2354,7 @@ Controls the strategy for grouping sets of consecutive imports. Imports may cont
 
 - **Default value**: `Preserve`
 - **Possible values**: `Preserve`, `StdExternalCrate`, `One`, `ByDistance`, `ByDistanceDescending`
-- **Stable**: No (tracking issue: [#5083](https://github.com/rust-lang/rustfmt/issues/5083))
+- **Stable**: Yes (variants changed by Stockly)
 
 Each set of imports (one or more `use` statements, optionally separated by newlines) will be formatted independently. Other statements such as `mod ...` or `extern crate ...` will cause imports to not be grouped together.
 
@@ -2492,7 +2492,7 @@ Discard all newlines between consecutive module declarations and group them into
 
 - **Default value**: `false`
 - **Possible values**: `true`, `false`
-- **Stable**: No
+- **Stable**: Yes (created by Stockly)
 
 ## `reorder_modules`
 
@@ -2500,7 +2500,7 @@ Reorder `mod` declarations in group.
 
 - **Default value**: `Alphabetically`
 - **Possible values**: `Preserve`, `Alphabetically`, `Visibility`
-- **Stable**: Yes
+- **Stable**: Yes (variants changed by Stockly)
 
 #### `Alphabetically` (default)
 
@@ -3371,7 +3371,7 @@ Note that no wrapping will happen if:
 
 - **Default value**: `false`
 - **Possible values**: `true`, `false`
-- **Stable**: No (tracking issue: [#3347](https://github.com/rust-lang/rustfmt/issues/3347))
+- **Stable**: Yes (overridden by Stockly)
 
 #### `false` (default):
 

@@ -60,25 +60,25 @@ create_config! {
         block over multiple lines.";
 
     // Comments. macros, and strings
-    wrap_comments: WrapComments, false, "Break comments to fit on the line";
-    format_code_in_doc_comments: FormatCodeInDocComments, false, "Format the code snippet in \
+    wrap_comments: WrapComments, true, "Break comments to fit on the line";
+    format_code_in_doc_comments: FormatCodeInDocComments, true, "Format the code snippet in \
         doc comments.";
     doc_comment_code_block_width: DocCommentCodeBlockWidth, false, "Maximum width for code \
         snippets in doc comments. No effect unless format_code_in_doc_comments = true";
-    comment_width: CommentWidth, false,
+    comment_width: CommentWidth, true,
         "Maximum length of comments. No effect unless wrap_comments = true";
     normalize_comments: NormalizeComments, false, "Convert /* */ comments to // comments where \
         possible";
-    normalize_doc_attributes: NormalizeDocAttributes, false, "Normalize doc attributes as doc \
+    normalize_doc_attributes: NormalizeDocAttributes, true, "Normalize doc attributes as doc \
         comments";
     format_strings: FormatStrings, false, "Format string literals where necessary";
     format_macro_matchers: FormatMacroMatchers, false,
         "Format the metavariable matching patterns in macros";
-    format_macro_bodies: FormatMacroBodies, false,
+    format_macro_bodies: FormatMacroBodies, true,
         "Format the bodies of declarative macro definitions";
     skip_macro_invocations: SkipMacroInvocations, false,
         "Skip formatting the bodies of macros invoked with the following names.";
-    hex_literal_case: HexLiteralCaseConfig, false, "Format hexadecimal integer literals";
+    hex_literal_case: HexLiteralCaseConfig, true, "Format hexadecimal integer literals";
     float_literal_trailing_zero: FloatLiteralTrailingZeroConfig, false,
         "Add or remove trailing zero in floating-point literals";
 
@@ -95,13 +95,13 @@ create_config! {
     imports_layout: ImportsLayout, false, "Item layout inside a import block";
     imports_granularity: ImportsGranularityConfig, false,
         "Merge or split imports to the provided granularity";
-    group_imports: GroupImportsTacticConfig, false,
+    group_imports: GroupImportsTacticConfig, true,
         "Controls the strategy for how imports are grouped together";
     merge_imports: MergeImports, false, "(deprecated: use imports_granularity instead)";
 
     // Ordering
     reorder_imports: ReorderImports, true, "Reorder import and extern crate statements";
-    regroup_modules: RegroupModules, false, "Discard newlines and regroup all consecutive modules \
+    regroup_modules: RegroupModules, true, "Discard newlines and regroup all consecutive modules \
         together";
     reorder_modules: ReorderModules, true, "Reorder module statements in group";
     reorder_impl_items: ReorderImplItems, false, "Reorder impl items";
@@ -169,7 +169,7 @@ create_config! {
     use_field_init_shorthand: UseFieldInitShorthand, true, "Use field initialization shorthand if \
         possible";
     force_explicit_abi: ForceExplicitAbi, true, "Always print the abi for extern items";
-    condense_wildcard_suffixes: CondenseWildcardSuffixes, false, "Replace strings of _ wildcards \
+    condense_wildcard_suffixes: CondenseWildcardSuffixes, true, "Replace strings of _ wildcards \
         by a single .. in tuple patterns";
 
     // Control options (changes the operation of rustfmt, rather than the formatting)
