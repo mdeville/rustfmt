@@ -144,6 +144,16 @@ pub enum ReorderImportsTactic {
 }
 
 #[config_type]
+pub enum ReorderModulesTactic {
+    /// Keep modules in their original order.
+    Preserve,
+    /// Sort modules alphabetically.
+    Alphabetically,
+    /// Sort modules by visibility (Public to Private)
+    Visibility,
+}
+
+#[config_type]
 /// How to merge imports.
 pub enum ImportGranularity {
     /// Do not merge imports.
@@ -670,7 +680,7 @@ config_option_with_style_edition_default!(
     // Ordering
     ReorderImports, ReorderImportsTactic, _ => ReorderImportsTactic::Alphabetically;
     RegroupModules, bool, _ => false;
-    ReorderModules, bool, _ => true;
+    ReorderModules, ReorderModulesTactic, _ => ReorderModulesTactic::Alphabetically;
     ReorderImplItems, bool, _ => false;
 
     // Spaces around punctuation

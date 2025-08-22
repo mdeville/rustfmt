@@ -2496,13 +2496,13 @@ Discard all newlines between consecutive module declarations and group them into
 
 ## `reorder_modules`
 
-Reorder `mod` declarations alphabetically in group.
+Reorder `mod` declarations in group.
 
-- **Default value**: `true`
-- **Possible values**: `true`, `false`
+- **Default value**: `Alphabetically`
+- **Possible values**: `Preserve`, `Alphabetically`, `Visibility`
 - **Stable**: Yes
 
-#### `true` (default)
+#### `Alphabetically` (default)
 
 ```rust
 mod a;
@@ -2514,7 +2514,7 @@ mod lorem;
 mod sit;
 ```
 
-#### `false`
+#### `Preserve`
 
 ```rust
 mod b;
@@ -2523,6 +2523,18 @@ mod a;
 mod lorem;
 mod ipsum;
 mod dolor;
+mod sit;
+```
+
+#### `Visibility`
+
+```rust
+pub mod a;
+pub(crate) mod b;
+mod c;
+
+mod dolor;
+mod lorem;
 mod sit;
 ```
 

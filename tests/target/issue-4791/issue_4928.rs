@@ -10,7 +10,7 @@
 // rustfmt-normalize_doc_attributes: true
 // rustfmt-overflow_delimited_expr: true
 // rustfmt-reorder_imports: Preserve
-// rustfmt-reorder_modules: true
+// rustfmt-reorder_modules: Alphabetically
 // rustfmt-struct_field_align_threshold: 20
 // rustfmt-tab_spaces: 4
 // rustfmt-trailing_comma: Never

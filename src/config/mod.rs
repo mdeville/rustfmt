@@ -103,7 +103,7 @@ create_config! {
     reorder_imports: ReorderImports, true, "Reorder import and extern crate statements";
     regroup_modules: RegroupModules, false, "Discard newlines and regroup all consecutive modules \
         together";
-    reorder_modules: ReorderModules, true, "Reorder module statements alphabetically in group";
+    reorder_modules: ReorderModules, true, "Reorder module statements in group";
     reorder_impl_items: ReorderImplItems, false, "Reorder impl items";
 
     // Spaces around punctuation
@@ -792,7 +792,7 @@ imports_granularity = "Preserve"
 group_imports = "Preserve"
 reorder_imports = "Alphabetically"
 regroup_modules = false
-reorder_modules = true
+reorder_modules = "Alphabetically"
 reorder_impl_items = false
 type_punctuation_density = "Wide"
 space_before_colon = false
@@ -885,7 +885,7 @@ imports_granularity = "Preserve"
 group_imports = "Preserve"
 reorder_imports = "Alphabetically"
 regroup_modules = false
-reorder_modules = true
+reorder_modules = "Alphabetically"
 reorder_impl_items = false
 type_punctuation_density = "Wide"
 space_before_colon = false

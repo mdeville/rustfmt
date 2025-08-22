@@ -13,7 +13,9 @@ use rustc_ast::{ast, attr};
 use rustc_span::{Span, symbol::sym};
 
 use crate::StyleEdition;
-use crate::config::{Config, GroupImportsTactic, ImportGranularity, ReorderImportsTactic};
+use crate::config::{
+    Config, GroupImportsTactic, ImportGranularity, ReorderImportsTactic, ReorderModulesTactic,
+};
 use crate::imports::{UseSegment, UseSegmentKind, UseTree, normalize_use_trees_with_granularity};
 use crate::items::{is_mod_decl, rewrite_extern_crate, rewrite_mod};
 use crate::lists::{ListFormatting, ListItem, itemize_list, write_list};
@@ -22,7 +24,7 @@ use crate::shape::Shape;
 use crate::sort::version_sort;
 use crate::source_map::LineRangeUtils;
 use crate::spanned::Spanned;
-use crate::utils::{contains_skip, mk_sp};
+use crate::utils::{contains_skip, mk_sp, visibility_sort_key};
 use crate::visitor::FmtVisitor;
 
 /// Choose the ordering between the given two items.
@@ -33,7 +35,19 @@ fn compare_items(a: &ast::Item, b: &ast::Item, context: &RewriteContext<'_>) -> 
             if style_edition <= StyleEdition::Edition2021 {
                 a_ident.as_str().cmp(b_ident.as_str())
             } else {
-                version_sort(a_ident.as_str(), b_ident.as_str())
+                match context.config.reorder_modules() {
+                    ReorderModulesTactic::Preserve => Ordering::Equal,
+                    ReorderModulesTactic::Alphabetically => {
+                        version_sort(a_ident.as_str(), b_ident.as_str())
+                    }
+                    ReorderModulesTactic::Visibility => {
+                        let a_vis = &a.vis;
+                        let b_vis = &b.vis;
+                        visibility_sort_key(a_vis)
+                            .cmp(&visibility_sort_key(b_vis))
+                            .then_with(|| version_sort(a_ident.as_str(), b_ident.as_str()))
+                    }
+                }
             }
         }
         (
@@ -333,7 +347,9 @@ impl ReorderableItemKind {
             ReorderableItemKind::ExternCrate => {
                 !matches!(config.reorder_imports(), ReorderImportsTactic::Preserve)
             }
-            ReorderableItemKind::Mod => config.reorder_modules(),
+            ReorderableItemKind::Mod => {
+                !matches!(config.reorder_modules(), ReorderModulesTactic::Preserve)
+            }
             ReorderableItemKind::Use => {
                 !matches!(config.reorder_imports(), ReorderImportsTactic::Preserve)
             }
